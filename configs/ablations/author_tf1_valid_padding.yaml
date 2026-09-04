@@ -1,0 +1,13 @@
+protocol: author_tf1
+run_name: fi2010-author-tf1-valid-padding
+
+data:
+  dataset: fi2010
+
+models:
+  names: [deeplob]
+  time_padding: valid
+
+training:
+  seed: 42
+  device: auto

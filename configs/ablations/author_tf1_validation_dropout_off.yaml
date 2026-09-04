@@ -1,0 +1,14 @@
+protocol: author_tf1
+run_name: fi2010-author-tf1-validation-dropout-off
+
+data:
+  dataset: fi2010
+
+models:
+  names: [deeplob]
+  # Protocol-drift ablation: this changes validation behavior and checkpoint selection, so it retrains.
+  dropout_at_inference: false
+
+training:
+  seed: 42
+  device: auto

@@ -1,0 +1,15 @@
+protocol: paper
+run_name: fi2010-paper-spec
+
+data:
+  dataset: fi2010
+  raw_dir: data/raw
+  processed_dir: data/processed
+  horizons: [10, 20, 50]
+
+models:
+  names: [deeplob]
+
+training:
+  seed: 42
+  device: auto

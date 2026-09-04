@@ -1,0 +1,18 @@
+protocol: author_tf1
+run_name: fi2010-author-tf1-eval-dropout-off
+
+data:
+  dataset: fi2010
+
+models:
+  names: [deeplob]
+
+# Pure evaluation ablation: read the base author-TF1 checkpoint and switch dropout off only at test time.
+evaluation:
+  checkpoint_source_run: fi2010-author-tf1
+  dropout_at_inference_override: false
+  mc_dropout_repeats: 1
+
+training:
+  seed: 42
+  device: auto

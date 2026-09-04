@@ -1,0 +1,22 @@
+name: Real FI-2010 data audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 7 1 * *"
+
+jobs:
+  setup2-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: python scripts/download_author_setup2.py
+      - run: deeplob-rep prepare --normalization decimal
+      - run: pytest -q tests/test_real_fi2010.py
+        env:
+          DEEPLOB_RUN_REAL_DATA: "1"

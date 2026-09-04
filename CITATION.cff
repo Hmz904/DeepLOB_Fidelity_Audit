@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this fidelity-audit code, please cite the repository and the original DeepLOB paper."
+title: "DeepLOB Fidelity Audit"
+version: 0.1.4
+date-released: 2026-09-03
+authors:
+  - family-names: Zhao
+    given-names: Haoming
+repository-code: "https://github.com/Hmz904/DeepLOB-Replication"
+license: MIT
+preferred-citation:
+  type: article
+  title: "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books"
+  authors:
+    - family-names: Zhang
+      given-names: Zihao
+    - family-names: Zohren
+      given-names: Stefan
+    - family-names: Roberts
+      given-names: Stephen
+  journal: "IEEE Transactions on Signal Processing"
+  volume: 67
+  issue: 11
+  start: 3001
+  end: 3012
+  year: 2019

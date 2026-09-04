@@ -1,0 +1,16 @@
+protocol: author_tf1
+run_name: fi2010-author-tf1-baselines
+
+data:
+  dataset: fi2010
+  raw_dir: data/raw
+  processed_dir: data/processed
+  horizons: [10, 20, 50]
+
+models:
+  names: [linear, mlp, cnn, lstm, mlplob]
+
+training:
+  seed: 42
+  device: auto
+  num_workers: 0

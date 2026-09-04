@@ -1,0 +1,14 @@
+protocol: author_tf1
+run_name: fi2010-author-tf1-paper-channels
+
+data:
+  dataset: fi2010
+
+models:
+  names: [deeplob]
+  conv_channels: 16
+  inception_channels: 32
+
+training:
+  seed: 42
+  device: auto

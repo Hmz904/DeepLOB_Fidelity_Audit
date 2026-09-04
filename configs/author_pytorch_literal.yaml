@@ -1,0 +1,18 @@
+# Literal reproduction of the released author PyTorch notebook, including its
+# softmax-before-CrossEntropyLoss behavior. See author_pytorch_corrected.yaml
+# for the corrected-logits counterfactual.
+protocol: author_pytorch_literal
+run_name: fi2010-author-pytorch-literal
+
+data:
+  dataset: fi2010
+  raw_dir: data/raw
+  processed_dir: data/processed
+  horizons: [10, 20, 50, 100]
+
+models:
+  names: [deeplob]
+
+training:
+  seed: 42
+  device: auto
