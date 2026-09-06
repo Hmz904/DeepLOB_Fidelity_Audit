@@ -14,3 +14,7 @@ data/processed/*
 !data/processed/.gitkeep
 outputs/*
 !outputs/.gitkeep
+
+.venv/
+logs/
+*.egg-info/
