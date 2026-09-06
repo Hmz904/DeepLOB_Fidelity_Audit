@@ -18,3 +18,5 @@ outputs/*
 .venv/
 logs/
 *.egg-info/
+
+data/processed_real_backup/
