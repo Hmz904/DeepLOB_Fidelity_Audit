@@ -138,7 +138,8 @@ Same protocol, same seed (42), full 200 epochs, one seed each. Fingerprints
 `809e019c02e94906` (k=10), `ffa610ae43d639f2` (k=20), `8513402c88234b07` (k=50). What the
 fingerprint covers has not been fully characterised: it differs across horizons, but the
 evaluation-only dropout ablation below reproduces the k=10 fingerprint exactly despite changing
-`run_name`, the evaluation block and the MC repeat count. Horizon is inside the fingerprint;
+`run_name`, the evaluation block and the MC repeat count. A two-seed smoke run additionally produces two distinct
+fingerprints from configs differing only in seed. Horizon and seed are inside the fingerprint;
 the evaluation block is not.
 
 | metric | k=10 | k=20 | k=50 |
