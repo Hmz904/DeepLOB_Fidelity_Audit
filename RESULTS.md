@@ -135,8 +135,11 @@ independent reimplementation built only from the paper and the released notebook
 ## Verified: all three horizons, `author_tf1`
 
 Same protocol, same seed (42), full 200 epochs, one seed each. Fingerprints
-`809e019c02e94906` (k=10), `ffa610ae43d639f2` (k=20), `8513402c88234b07` (k=50); these
-differ because the fingerprint covers config content, not code alone.
+`809e019c02e94906` (k=10), `ffa610ae43d639f2` (k=20), `8513402c88234b07` (k=50). What the
+fingerprint covers has not been fully characterised: it differs across horizons, but the
+evaluation-only dropout ablation below reproduces the k=10 fingerprint exactly despite changing
+`run_name`, the evaluation block and the MC repeat count. Horizon is inside the fingerprint;
+the evaluation block is not.
 
 | metric | k=10 | k=20 | k=50 |
 |---|---:|---:|---:|
@@ -257,11 +260,34 @@ separately because they change several choices at once.
 | Choice | Fidelity/reference variant | Counterfactual | delta weighted F1 | Status |
 |---|---|---|---:|---|
 | normalization | decimal precision | z-score | — | config included |
-| test-time dropout, same checkpoint | on (`author_tf1`) | off via evaluation override | — | config included |
+| test-time dropout, same checkpoint | on (`author_tf1`) | off via evaluation override | **+0.000034** | **measured, k=10** |
 | validation dropout / checkpoint selection | on (`author_tf1`) | off during validation | — | config included; retrains |
 | time padding | SAME | VALID | — | config included |
 | channel width | 32/64 | 16/32 | — | config included |
 
+### Measured: test-time dropout contributes nothing to the gap
+
+The evaluation-only counterfactual reads the fitted k=10 checkpoint and switches dropout off at
+prediction, changing nothing else. One draw each, since the counterfactual is deterministic:
+
+| | dropout on (`author_tf1`) | dropout off | delta |
+|---|---:|---:|---:|
+| weighted F1 | 0.807689 | 0.807723 | **+0.000034** |
+| accuracy | 0.819726 | 0.819683 | −0.000043 |
+| expected calibration error | 0.011178 | 0.010807 | −0.000371 |
+
+The weighted-F1 difference is **+0.000034**, an order of magnitude below the Monte-Carlo
+standard deviation of 0.000213 measured on the same checkpoint. It is not distinguishable from
+noise. Effect (1) in the inference-dropout decomposition is therefore not merely small, it is
+absent: the 2.6-point shortfall at k=10 owes nothing to the TF1 notebook's decision to leave
+dropout active at prediction, and that decision can be removed from the list of candidate
+explanations.
+
+The calibration error falls by 0.00037 with dropout off, which is the expected direction for
+sharper predictions, but is itself within noise and is not reported as a finding.
+
+This closes the only ablation row that required no retraining. Every remaining row costs a full
+200-epoch run.
 The point is not to choose whichever variant gives the highest number. The point is to
 estimate the **cost of ambiguity** in the published/released specifications.
 
@@ -340,6 +366,16 @@ ranges from 22.5% to 55.5% depending on horizon, and at k=20 it would have been 
 predict in advance: nothing about the protocol anticipates that the middle horizon converges
 last.
 
+**Configs listed as "included" had never been executed.** The ablation ledger described five
+counterfactual configs as available, and `README`/`RESULTS` printed them as runnable commands.
+The first one actually executed, `author_tf1_dropout_off.yaml`, failed twice before producing a
+number: its `checkpoint_source_run` named `fi2010-author-tf1`, a run directory that has never
+existed (the real one is `fi2010-author-tf1-k10`), and it omitted `data.horizons`, so it would
+have inherited the `[10, 20, 50]` default and evaluated a k=10 checkpoint against k=20 and k=50
+labels — a silent wrong answer rather than an error. Both were fixed before the run reported
+above. The remaining four ablation configs carry the same status and must be assumed broken until
+each is executed. Shipping a command in documentation is a claim that it runs; none of these had
+been checked.
 **No per-epoch progress output.** A 3.5-hour training run prints nothing between start and
 finish. During the interrupted attempt there was no way to distinguish a live process from a
 hung one except by inspecting GPU utilisation, and no training curve survives the run. The
