@@ -103,8 +103,8 @@ Single training seed, full 200-epoch `author_tf1` protocol, no shortcuts. Run fi
 | Horizon | Paper weighted F1 | Ours: author_tf1 | Gap | Majority floor | Lift over floor | Seeds | Status |
 |---:|---:|---:|---:|---:|---:|---:|---|
 | 10 | 0.8340 | **0.8077** | **−0.0263** | 0.5855 | **+0.2222** | 1 | **verified** |
-| 20 | 0.7282 | — | — | 0.4755 | — | — | pending |
-| 50 | 0.8035 | — | — | 0.3039 | — | — | pending |
+| 20 | 0.7282 | **0.7177** | **−0.0105** | 0.4755 | **+0.2422** | 1 | **verified** |
+| 50 | 0.8035 | **0.7505** | **−0.0530** | 0.3039 | **+0.4466** | 1 | **verified** |
 
 Full k=10 metrics:
 
@@ -132,13 +132,55 @@ Ablation Ledger below is how that work is done. The honest statement today is th
 independent reimplementation built only from the paper and the released notebook lands
 2.6 points short, and the cause is not yet attributed.
 
+## Verified: all three horizons, `author_tf1`
+
+Same protocol, same seed (42), full 200 epochs, one seed each. Fingerprints
+`809e019c02e94906` (k=10), `ffa610ae43d639f2` (k=20), `8513402c88234b07` (k=50); these
+differ because the fingerprint covers config content, not code alone.
+
+| metric | k=10 | k=20 | k=50 |
+|---|---:|---:|---:|
+| accuracy | 0.8197 | 0.7355 | 0.7514 |
+| weighted F1 | 0.8077 | 0.7177 | 0.7505 |
+| macro F1 | 0.7010 | 0.6300 | 0.7329 |
+| macro precision | 0.7666 | 0.6864 | 0.7366 |
+| macro recall | 0.6607 | 0.6019 | 0.7305 |
+| paper weighted F1 | 0.8340 | 0.7282 | 0.8035 |
+| **gap** | **−0.0263** | **−0.0105** | **−0.0530** |
+| expected calibration error | 0.0112 | **0.0402** | 0.0116 |
+| best epoch (of 200) | 69 | 135 | 85 |
+| best validation loss | 0.66936 | 0.82824 | 0.80198 |
+| MC weighted F1 std (5 draws) | 0.000213 | 0.000238 | 0.000188 |
+| training wall clock | 12,730 s | 12,414 s | 12,410 s |
+
+Three observations, each of which required more than one horizon to see:
+
+1. **The gap is not monotonic in `k`.** At −0.0105, k=20 is the closest of the three to the
+   published figure, and k=50 is the furthest at −0.0530. Any account of the shortfall that
+   predicts it grows with the prediction horizon is ruled out by this ordering. It also means
+   the k=10 figure of −0.0263 is not a representative value for the replication as a whole:
+   the horizon-to-horizon spread (0.0425) is larger than the k=10 gap itself.
+
+2. **Calibration is worst where accuracy is closest.** k=20 has an expected calibration error
+   3.5 times the other two (0.0402 against 0.0112 and 0.0116) while simultaneously showing the
+   smallest weighted-F1 gap. Accuracy and calibration are not moving together here, and nothing
+   in the protocol distinguishes k=20 from its neighbours, so this is recorded as an unexplained
+   observation rather than a finding.
+
+3. **Test-time dropout noise is uniformly negligible.** The MC standard deviation stays near
+   0.0002 at every horizon, two orders of magnitude below every gap in the table. The
+   single-draw reporting licence established at k=10 extends to k=20 and k=50.
+
+All three remain single-seed results. Under the reporting contract below, none of these gaps
+may be quoted as *the* replication gap until the multi-seed table exists — and with the spread
+across horizons at 0.0425, the seed spread is the obvious next thing to measure.
 ### Compute manifest
 
 | | |
 |---|---|
 | GPU | NVIDIA GeForce RTX 3060 Laptop, 6 GB, 105 W |
 | Software | PyTorch 2.5.1+cu121, CUDA 12.1, Windows |
-| Training | 200 epochs, 12,730 s wall clock (3 h 32 m), 63.7 s/epoch |
+| Training | 200 epochs per horizon: 12,730 s (k=10), 12,414 s (k=20), 12,410 s (k=50); 62.1-63.7 s/epoch |
 | Peak GPU memory | about 1.8 GB of 6 GB |
 | Inference | 9.79 s for 139,488 windows, 0.070 ms/window, 14,251 events/s |
 
@@ -254,14 +296,16 @@ At the measured 63.7 s/epoch and 200 epochs per run:
 
 | task | runs | estimate |
 |---|---:|---:|
-| k=20 and k=50 | 2 | 7 h |
+| k=20 and k=50 | 2 | done, 6 h 54 m measured |
 | five seeds at k=10 (one done) | 4 | 14 h |
 | three retraining ablations at k=10 | 3 | 10.5 h |
 | evaluation-only dropout counterfactual | 1 | seconds |
-| **total** | | **about 32 h** |
+| **total remaining** | | **about 25 h** |
 
 See the `patience` defect below: enabling the stopping rule the protocol already carries
-would cut this to roughly 11 h without changing any selected checkpoint.
+would cut this without changing any selected checkpoint, by between 22.5% and 55.5% per run
+depending on horizon. The k=10 saving is the largest of the three measured so far, so applying
+it to the whole budget would understate the remaining cost.
 
 ---
 
@@ -279,6 +323,22 @@ patience would have stopped at epoch 89 and selected **the identical weights and
 metrics**. This is not a fidelity trade-off, it is unspent compute — but it should be enabled
 with a widened patience and recorded in `FIDELITY.md` as a compute bound, since k=20 and
 k=50 are not guaranteed to converge as early.
+
+That caveat has since been measured rather than assumed. The three completed horizons select
+very different epochs, so the saving is horizon-dependent and the k=10 figure does not
+generalise:
+
+| k | best epoch | would stop at (patience 20) | epochs saved of 200 |
+|---:|---:|---:|---:|
+| 10 | 69 | 89 | 55.5% |
+| 20 | 135 | 155 | 22.5% |
+| 50 | 85 | 105 | 47.5% |
+
+The selected checkpoint is unchanged in all three cases, since selection is by best validation
+loss and every one of these best epochs precedes its own stopping point. The saving is real but
+ranges from 22.5% to 55.5% depending on horizon, and at k=20 it would have been impossible to
+predict in advance: nothing about the protocol anticipates that the middle horizon converges
+last.
 
 **No per-epoch progress output.** A 3.5-hour training run prints nothing between start and
 finish. During the interrupted attempt there was no way to distinguish a live process from a
