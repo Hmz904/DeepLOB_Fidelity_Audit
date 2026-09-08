@@ -10,18 +10,23 @@ This repository asks a narrower and more useful question than “can I implement
 
 The implementation is built to make expensive experiments inspectable: named protocols, data/code fingerprints, atomic checkpoints, strict split tests, complete run manifests, multi-seed aggregation, MC-dropout diagnostics, and CI.
 
-## First verified result
+## Verified results: all three horizons
 
-`author_tf1`, horizon k = 10, single seed, full 200-epoch run on real FI-2010 Setup-2 data
-(run fingerprint `809e019c02e94906`):
+`author_tf1`, single seed each, full 200-epoch runs on real FI-2010 Setup-2 data:
 
-| | weighted F1 | accuracy |
-|---|---:|---:|
-| Paper (Setup 2, k=10) | 0.8340 | 0.8447 |
-| **This repository** | **0.8077** | **0.8197** |
-| Majority-class floor | 0.5855 | 0.7069 |
-| **Gap to paper** | **−0.0263** | −0.0250 |
-| **Lift over floor** | **+0.2222** | +0.1128 |
+| | k = 10 | k = 20 | k = 50 |
+|---|---:|---:|---:|
+| Paper weighted F1 | 0.8340 | 0.7282 | 0.8035 |
+| **This repository** | **0.8077** | **0.7177** | **0.7505** |
+| Majority-class floor | 0.5855 | 0.4755 | 0.3039 |
+| **Gap to paper** | **−0.0263** | **−0.0105** | **−0.0530** |
+| **Lift over floor** | **+0.2222** | **+0.2422** | **+0.4466** |
+| accuracy | 0.8197 | 0.7355 | 0.7514 |
+
+**The gap is not monotonic in `k`.** k=20 is the closest to the published figure and k=50 the
+furthest; the spread across horizons (0.0425) is larger than the k=10 gap itself. Any explanation
+of the shortfall that predicts it grows with the prediction horizon is ruled out by this ordering,
+and no single one of these three numbers is a representative "replication gap".
 
 The floor row is not decoration. Predicting *stationary* for every window already scores
 0.7069 accuracy on this benchmark, so an accuracy near 0.82 is a lift of 0.11 over a constant
@@ -30,14 +35,18 @@ the floor alongside the model.
 
 A gap below the published value is **not** treated as failure. The output of this project is
 the attribution of that gap — protocol drift, seed variance, inference-time dropout, padding,
-initialization — through the Ablation Ledger. With one seed and one horizon, none of those
-has been isolated yet, and everything not yet run is marked pending rather than estimated.
+initialization — through the Ablation Ledger. One candidate is already eliminated: switching
+test-time dropout off on the fitted k=10 checkpoint moves weighted F1 by **+0.000034**, an order
+of magnitude below the Monte-Carlo standard deviation of 0.000213 on the same weights. The rest
+still rest on one seed per horizon, and everything not yet run is marked pending rather than
+estimated.
 
 > **Result status.** Verified and committed: the data pipeline reproduces the authors'
 > exact Setup-2 window counts (203,701 / 50,851 / 139,488) and the 142,691 parameter count;
-> the test-set class balance and majority baselines are measured; `author_tf1` k=10 is
-> trained and reported above. Still pending: k=20 and k=50, the five-seed table, and the
-> Ablation Ledger. Paper targets elsewhere in this README are reference values, not results.
+> the test-set class balance and majority baselines are measured; `author_tf1` is trained and
+> reported above at k=10, k=20 and k=50; the evaluation-only dropout ablation is measured
+> (+0.000034, inside noise). Still pending: the five-seed table and the four retraining rows of
+> the Ablation Ledger. Paper targets elsewhere in this README are reference values, not results.
 > [`RESULTS.md`](RESULTS.md) keeps the two apart.
 
 **The baseline every DeepLOB number must be read against** (FI-2010 Setup-2 test set,
@@ -199,6 +208,14 @@ who clones this repository:
 - **No per-epoch progress output and no resume.** A 3.5-hour run prints nothing between
   start and finish, and the partial checkpoint stores weights only — no optimizer or RNG
   state.
+- **Configs listed as available had never been executed.** The Ablation Ledger described five
+  counterfactual configs as included and this README printed them as runnable commands. The
+  first one actually run, `author_tf1_dropout_off.yaml`, failed twice first: it named a
+  checkpoint source run that has never existed, and it omitted `data.horizons`, so it would
+  have inherited the `[10, 20, 50]` default and scored a k=10 checkpoint against k=20 and k=50
+  labels — a silent wrong answer rather than an error. Both are fixed. **The remaining four
+  ablation configs must be assumed broken until each has been executed.** Printing a command in
+  documentation is a claim that it runs.
 
 ## Why there is no FI-2010 PnL
 
@@ -244,10 +261,10 @@ The normal CI suite is network-free. A separate monthly/manual **Real FI-2010 da
 
 See [`RESULTS.md`](RESULTS.md). The intended headline artifacts are:
 
-1. paper vs independent weighted-F1 gap by horizon (k=10 done, k=20/50 pending);
+1. paper vs independent weighted-F1 gap by horizon (**k=10, k=20 and k=50 all done**);
 2. five-seed mean ± standard deviation (pending);
 3. class distribution + majority baseline (done);
-4. an **Ablation Ledger** measuring the F1 cost of normalization, padding and channel-count ambiguities, while splitting inference dropout into (a) same-checkpoint test-time dropout noise and (b) validation/checkpoint-selection drift. (a) is measured at k=10; (b) is pending.
+4. an **Ablation Ledger** measuring the F1 cost of normalization, padding and channel-count ambiguities, while splitting inference dropout into (a) same-checkpoint test-time dropout noise and (b) validation/checkpoint-selection drift. (a) is measured at k=10 — **+0.000034 weighted F1, inside Monte-Carlo noise, so test-time dropout is eliminated as an explanation of the gap**; (b) is pending and requires retraining.
 
 ```bash
 pip install -e ".[report]"
