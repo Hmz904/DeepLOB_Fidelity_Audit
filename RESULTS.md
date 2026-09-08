@@ -262,7 +262,7 @@ separately because they change several choices at once.
 |---|---|---|---:|---|
 | normalization | decimal precision | z-score | — | **blocked: raw data absent** |
 | test-time dropout, same checkpoint | on (`author_tf1`) | off via evaluation override | **+0.000034** | **measured, k=10** |
-| validation dropout / checkpoint selection | on (`author_tf1`) | off during validation | — | config included; retrains |
+| validation dropout / checkpoint selection | on (`author_tf1`) | off during validation | **+0.011153** | **measured, k=10** |
 | time padding | SAME | VALID | **−0.012921** | **measured, k=10** |
 | channel width | 32/64 | 16/32 | **−0.006020** | **measured, k=10** |
 
@@ -322,6 +322,47 @@ upper bound on the cost of narrow channels under *this* epoch budget, not an est
 of narrow channels. Re-running it with a longer budget is the correct follow-up and is not yet
 done. The VALID run peaks at 140 and is less exposed to this.
 
+### Measured: validation-time dropout, the only row that moves toward the paper
+
+| | base (`author_tf1`) | validation dropout off | delta |
+|---|---:|---:|---:|
+| weighted F1 | 0.807689 | **0.818842** | **+0.011153** |
+| accuracy | 0.819726 | 0.829075 | +0.009349 |
+| macro F1 | 0.7010 | 0.7220 | +0.0210 |
+| ECE | 0.011178 | **0.015047** | +0.003869 |
+| best epoch (of 200) | 69 | 74 | +5 |
+| best validation loss | 0.66936 | 0.64187 | — |
+
+**This closes 42 % of the k=10 gap.** −0.0263 becomes −0.0152 by changing one thing the paper does
+not specify and the TF1 notebook resolves by leaving dropout active while validating. It is the
+only measured row that moves toward the published figure rather than away from it, and it is
+therefore the first real candidate for where the shortfall lives.
+
+Two qualifications, both material.
+
+**The config changes validation and test dropout together.** `models.dropout_at_inference`
+governs both, so this run also predicts with dropout off — visible as
+`evaluation_dropout_at_inference = False` and `mc_dropout_repeats = 1` in its row. That second
+effect is already measured in isolation above at **+0.000034**, so essentially all of the +0.0112
+is attributable to the validation-side change. The decomposition works only because the
+evaluation-only counterfactual was run first.
+
+**The mechanism is not checkpoint selection, or not only that.** The obvious story — noisy
+validation loss picks the wrong epoch — predicts a large shift in the selected epoch. The selected
+epoch moves from 69 to 74. Validation loss is cleanly lower (0.6419 against 0.6694), as expected
+when the stochasticity is removed, but the run is choosing an almost identical point on a
+different trajectory. Whatever produces the 1.1 points acts on training itself, not merely on
+which snapshot is kept, and this data does not identify it.
+
+**Calibration moves the other way.** ECE rises from 0.0112 to 0.0150 while F1 rises. This is the
+second time in this audit that the best-accuracy configuration is not the best-calibrated one —
+k=20 shows the same pattern across horizons. Recorded, not explained.
+
+**None of this licenses turning validation dropout off.** The base protocol is what the authors'
+notebook does; a replication that quietly switched it would be reporting a different
+specification's number under the paper's name. The correct use of this row is the opposite: it
+says that a reader who resolves this ambiguity the other way gains 1.1 points, which is large
+enough that the published 0.834 may itself rest on a choice the paper never states.
 ### What these numbers are not
 
 They are **not an attribution of the −0.0263 gap to the paper**. The base run already uses SAME
@@ -334,9 +375,10 @@ took VALID padding from the text and 16/32 channels from the paper's figure woul
 1.9 points below this repository and 4.5 points below the published result, without having made
 any error a reviewer could point at.
 
-The gap itself remains unattributed. Test-time dropout is eliminated (+0.000034). Three candidates
-are still open: seed variance, initialization, and validation-time dropout changing which epoch is
-selected — the last of which is the ablation currently running.
+The gap is now partly attributed. Test-time dropout is eliminated (+0.000034); validation-time
+dropout accounts for **42 %** of it (+0.011153, above). The residual −0.0152 has two candidates
+left, seed variance and initialization, and the five-seed table is what separates them — which
+makes it the highest-value outstanding run in this repository, not merely the most expensive.
 The point is not to choose whichever variant gives the highest number. The point is to
 estimate the **cost of ambiguity** in the published/released specifications.
 
