@@ -263,8 +263,8 @@ separately because they change several choices at once.
 | normalization | decimal precision | z-score | — | **blocked: raw data absent** |
 | test-time dropout, same checkpoint | on (`author_tf1`) | off via evaluation override | **+0.000034** | **measured, k=10** |
 | validation dropout / checkpoint selection | on (`author_tf1`) | off during validation | — | config included; retrains |
-| time padding | SAME | VALID | — | config included |
-| channel width | 32/64 | 16/32 | — | config included |
+| time padding | SAME | VALID | **−0.012921** | **measured, k=10** |
+| channel width | 32/64 | 16/32 | **−0.006020** | **measured, k=10** |
 
 ### Measured: test-time dropout contributes nothing to the gap
 
@@ -289,6 +289,54 @@ sharper predictions, but is itself within noise and is not reported as a finding
 
 This closes the only ablation row that required no retraining. Every remaining row costs a full
 200-epoch run.
+
+### Measured: the two retraining ablations that change the architecture
+
+Both retrain from scratch at k=10, seed 42, 200 epochs, against the same base run:
+
+| | base (`author_tf1`) | 16/32 channels | VALID padding |
+|---|---:|---:|---:|
+| parameters | 142,691 | **60,947** | 142,691 |
+| weighted F1 | 0.807689 | 0.801669 | 0.794768 |
+| **delta** | — | **−0.006020** | **−0.012921** |
+| accuracy | 0.819726 | 0.818895 | 0.807482 |
+| macro F1 | 0.7010 | 0.6827 | 0.6747 |
+| ECE | 0.011178 | 0.009178 | 0.011415 |
+| best epoch (of 200) | 69 | **180** | 140 |
+| training seconds | 12,730 | 4,819 | 11,091 |
+
+**Padding costs more than twice what channel width costs.** Halving both channel counts removes
+57 % of the parameters and 62 % of the training time for 0.6 points of weighted F1; switching the
+time padding to VALID changes no parameters at all and costs 1.3 points. Whichever ambiguity a
+reader of the paper resolves wrongly, this one is the expensive one.
+
+**Macro F1 falls faster than weighted F1 in both cases** — −0.0183 and −0.0263 against −0.0060 and
+−0.0129. The degradation is concentrated in the minority classes, and the weighted metric, which
+is what the paper reports, hides between half and two thirds of it. This is the concrete reason
+this repository reports both.
+
+**The 16/32 run may not have converged.** Its best epoch is 180 of 200,
+against 69 for the base
+run: the smaller network is still improving when the budget ends. Its −0.006020 is therefore an
+upper bound on the cost of narrow channels under *this* epoch budget, not an estimate of the cost
+of narrow channels. Re-running it with a longer budget is the correct follow-up and is not yet
+done. The VALID run peaks at 140 and is less exposed to this.
+
+### What these numbers are not
+
+They are **not an attribution of the −0.0263 gap to the paper**. The base run already uses SAME
+padding and 32/64 channels — the better option in both rows. Measuring that the alternatives are
+worse cannot explain why the better option still lands 2.6 points short.
+
+What the ledger estimates is the **cost of ambiguity**: how much a replicator pays for resolving
+an under-specified choice the other way. On that reading the two numbers are large. A reader who
+took VALID padding from the text and 16/32 channels from the paper's figure would land roughly
+1.9 points below this repository and 4.5 points below the published result, without having made
+any error a reviewer could point at.
+
+The gap itself remains unattributed. Test-time dropout is eliminated (+0.000034). Three candidates
+are still open: seed variance, initialization, and validation-time dropout changing which epoch is
+selected — the last of which is the ablation currently running.
 The point is not to choose whichever variant gives the highest number. The point is to
 estimate the **cost of ambiguity** in the published/released specifications.
 
@@ -325,9 +373,9 @@ At the measured 63.7 s/epoch and 200 epochs per run:
 |---|---:|---:|
 | k=20 and k=50 | 2 | done, 6 h 54 m measured |
 | five seeds at k=10 (one done) | 4 | 14 h |
-| three retraining ablations at k=10 | 3 | 10.5 h |
-| evaluation-only dropout counterfactual | 1 | seconds |
-| **total remaining** | | **about 25 h** |
+| retraining ablations at k=10 | 3 | two done (4,819 s + 11,091 s); one running |
+| evaluation-only dropout counterfactual | 1 | done, seconds |
+| **total remaining** | | **about 21 h** (five seeds, plus the running ablation) |
 
 See the `patience` defect below: enabling the stopping rule the protocol already carries
 would cut this without changing any selected checkpoint, by between 22.5% and 55.5% per run
