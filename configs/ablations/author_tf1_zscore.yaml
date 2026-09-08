@@ -3,6 +3,7 @@ run_name: fi2010-author-tf1-zscore
 
 data:
   dataset: fi2010
+  horizons: [10]
   normalization: zscore
 
 models:

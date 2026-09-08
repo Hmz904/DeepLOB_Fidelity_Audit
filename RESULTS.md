@@ -260,7 +260,7 @@ separately because they change several choices at once.
 
 | Choice | Fidelity/reference variant | Counterfactual | delta weighted F1 | Status |
 |---|---|---|---:|---|
-| normalization | decimal precision | z-score | — | config included |
+| normalization | decimal precision | z-score | — | **blocked: raw data absent** |
 | test-time dropout, same checkpoint | on (`author_tf1`) | off via evaluation override | **+0.000034** | **measured, k=10** |
 | validation dropout / checkpoint selection | on (`author_tf1`) | off during validation | — | config included; retrains |
 | time padding | SAME | VALID | — | config included |
@@ -377,6 +377,20 @@ labels — a silent wrong answer rather than an error. Both were fixed before th
 above. The remaining four ablation configs carry the same status and must be assumed broken until
 each is executed. Shipping a command in documentation is a claim that it runs; none of these had
 been checked.
+
+Executing them also separated *pending* from *blocked*. Three of the four remaining ablations need
+only GPU time. The z-score row needs data this repository does not have: `scripts/download_author_setup2.py`
+fetches the authors' convenience archive, which is decimal-precision Setup-2 only, and its own
+docstring points at Fairdata/ETSIN for the z-score variant. `data/raw` holds four `DecPre` files
+and no `ZScore` files, so `deeplob-rep prepare --normalization zscore` cannot run. Listing that
+row as merely pending overstated how close it was.
+
+A second status correction runs the other way. The operational note that `deeplob-rep synthetic`
+must never be run on this machine, because it would overwrite the real processed panel, **no longer
+applies**: `data.processed_panel_paths` names files `{dataset}_{normalization}`, so synthetic
+output goes to `synthetic_decimal_*.npz` and cannot collide with `fi2010_decimal_*.npz`. The
+backup in `data/processed_real_backup` is retained, but the prohibition was inherited from an
+earlier naming scheme and has been carried past its expiry.
 **No per-epoch progress output.** A 3.5-hour training run prints nothing between start and
 finish. During the interrupted attempt there was no way to distinguish a live process from a
 hung one except by inspecting GPU utilisation, and no training curve survives the run. The
