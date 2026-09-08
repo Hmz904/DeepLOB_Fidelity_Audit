@@ -532,5 +532,8 @@ The legend reports how many runs are behind the mean ± sd. The README should th
 that figure near the top: paper claim vs independent result by horizon, with the signed gap
 printed above each bar pair.
 
-`render_results.py` is the only path in the repository with no test coverage. It has been
-exercised against a hand-constructed `metrics.csv` but not yet against real run output.
+`render_results.py` is the only path in the repository with no test coverage. It has now been
+run against real output — the three-horizon figure in the README is its product — but the run was
+manual, not a test. Its one non-ASCII character (`±` in the multi-seed legend) turned out to be
+harmless: Python reads source as UTF-8 regardless of locale, so it executes normally under GBK.
+The residual risk is a matplotlib font lacking the glyph, not a decode error.

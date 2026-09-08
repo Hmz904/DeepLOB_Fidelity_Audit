@@ -23,6 +23,12 @@ The implementation is built to make expensive experiments inspectable: named pro
 | **Lift over floor** | **+0.2222** | **+0.2422** | **+0.4466** |
 | accuracy | 0.8197 | 0.7355 | 0.7514 |
 
+![Published vs independent replication, weighted F1 by horizon](docs/replication_gap.png)
+
+Regenerate with `python scripts/render_results.py outputs/metrics_all_horizons.csv --out docs/replication_gap.png`
+after concatenating the three per-horizon `metrics.csv` files; the same script takes
+`metrics_by_seed.csv` and adds error bars once the multi-seed table exists.
+
 **The gap is not monotonic in `k`.** k=20 is the closest to the published figure and k=50 the
 furthest; the spread across horizons (0.0425) is larger than the k=10 gap itself. Any explanation
 of the shortfall that predicts it grows with the prediction horizon is ruled out by this ordering,
