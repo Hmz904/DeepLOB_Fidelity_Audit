@@ -243,14 +243,51 @@ deeplob-rep multiseed configs/author_tf1.yaml --seeds 1 2 3 4 5
 Report mean ± std, never the best seed. The paper's headline table reports a single result;
 the multi-seed table makes optimization variance visible.
 
-| Horizon | weighted F1 mean | std | macro F1 mean | std |
-|---:|---:|---:|---:|---:|
-| 10 | — | — | — | — |
-| 20 | — | — | — | — |
-| 50 | — | — | — | — |
+| Horizon | weighted F1 mean | std | macro F1 mean | std | seeds |
+|---:|---:|---:|---:|---:|---:|
+| 10 | **0.810943** | **0.006500** | 0.705773 | 0.009644 | 5 |
+| 20 | 0.717720 | — | 0.629972 | — | 1 |
+| 50 | 0.750468 | — | 0.732857 | — | 1 |
 
-Until this table exists, the −0.0263 gap above is a single draw from an unknown
-seed distribution and must not be quoted as *the* replication gap.
+Per-seed detail at k=10:
+
+| seed | weighted F1 | accuracy | macro F1 | ECE | best epoch | train seconds |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 0.807558 | 0.817260 | 0.703300 | 0.013100 | 96 | 12,287 |
+| 2 | **0.817319** | 0.827304 | 0.714718 | 0.012998 | 128 | 12,244 |
+| 3 | 0.811260 | 0.820386 | 0.706742 | 0.017362 | 121 | 12,204 |
+| 4 | **0.801828** | 0.814608 | 0.690230 | 0.019787 | 144 | 12,152 |
+| 5 | 0.816749 | 0.828293 | 0.713877 | 0.017582 | 105 | 12,366 |
+| 42 (base) | 0.807689 | 0.819726 | 0.701000 | 0.011178 | **69** | 12,730 |
+
+The table now exists, and it changes what should be quoted.
+
+**The replication gap at k=10 is −0.0231 ± 0.0065, not −0.0263.** The headline figure elsewhere in
+this file is seed 42's, and seed 42 turns out to sit in the lower half of the distribution
+(0.807689 against a mean of 0.810943). Nothing was wrong with that run; it was one draw, and this
+is what one draw is worth.
+
+**Seed noise is thirty times inference noise.** The MC-dropout standard deviation on a fixed
+checkpoint is 0.000213; the standard deviation across training seeds is 0.006500. The earlier
+finding that a single evaluation draw is not materially misleading stands, and it says nothing
+whatever about a single *training* run — a distinction that was not measurable until now.
+
+**The residual gap is 2.3 seed standard deviations.** After the validation-dropout ablation
+accounts for +0.011153, the unexplained remainder at k=10 is −0.0152, which is 2.3 sd of the seed
+distribution. The best seed of five (0.817319) lands −0.0167 from the paper, and adding the
+validation-dropout effect to it would reach 0.8285 — within one standard deviation of the
+published 0.8340. The shortfall has not been shown to be an artifact, but it is no longer large
+relative to the noise this benchmark produces.
+
+**The paper reports a single number.** If its authors also ran one seed, 0.8340 is itself one draw
+from a distribution with sd on the order of 0.0065, and the honest comparison is between a
+distribution and a point, not between two point estimates. This audit can produce that distribution;
+the published table cannot.
+
+**Checkpoint selection is highly variable.** Best epochs across the five seeds are 96, 105, 121,
+128 and 144. Seed 42's 69 is outside that range entirely. The compute-budget arithmetic elsewhere
+in this file, which uses epoch 69 to size the saving from early stopping, is therefore based on the
+most favourable case observed; at a best epoch of 144 the saving falls to 18 %.
 
 ## Pending: Ablation Ledger
 

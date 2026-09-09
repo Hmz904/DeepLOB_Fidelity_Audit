@@ -1,4 +1,4 @@
-﻿protocol: author_tf1
+protocol: author_tf1
 run_name: _probe
 data:
   dataset: fi2010

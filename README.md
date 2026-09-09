@@ -12,22 +12,25 @@ The implementation is built to make expensive experiments inspectable: named pro
 
 ## Verified results: all three horizons
 
-`author_tf1`, single seed each, full 200-epoch runs on real FI-2010 Setup-2 data:
+`author_tf1`, full 200-epoch runs on real FI-2010 Setup-2 data. k=10 is five seeds; k=20 and
+k=50 are one seed each:
 
 | | k = 10 | k = 20 | k = 50 |
 |---|---:|---:|---:|
 | Paper weighted F1 | 0.8340 | 0.7282 | 0.8035 |
-| **This repository** | **0.8077** | **0.7177** | **0.7505** |
+| **This repository** | **0.8109** (5 seeds) | **0.7177** | **0.7505** |
 | Majority-class floor | 0.5855 | 0.4755 | 0.3039 |
-| **Gap to paper** | **−0.0263** | **−0.0105** | **−0.0530** |
+| **Gap to paper** | **−0.0231 ± 0.0065** | **−0.0105** | **−0.0530** |
 | **Lift over floor** | **+0.2222** | **+0.2422** | **+0.4466** |
 | accuracy | 0.8197 | 0.7355 | 0.7514 |
 
 ![Published vs independent replication, weighted F1 by horizon](docs/replication_gap.png)
 
-Regenerate with `python scripts/render_results.py outputs/metrics_all_horizons.csv --out docs/replication_gap.png`
-after concatenating the three per-horizon `metrics.csv` files; the same script takes
-`metrics_by_seed.csv` and adds error bars once the multi-seed table exists.
+The error bar on k=10 is the standard deviation across five training seeds (0.0065). **k=20 and
+k=50 have no error bar because they have one seed each, not because they are more certain** — the
+legend's `n=1-5` records that asymmetry. Regenerate by concatenating the five k=10 seed
+`metrics.csv` files with the k=20 and k=50 ones and passing the result to
+`scripts/render_results.py`.
 
 **The gap is not monotonic in `k`.** k=20 is the closest to the published figure and k=50 the
 furthest; the spread across horizons (0.0425) is larger than the k=10 gap itself. Any explanation
@@ -51,8 +54,9 @@ estimated.
 > exact Setup-2 window counts (203,701 / 50,851 / 139,488) and the 142,691 parameter count;
 > the test-set class balance and majority baselines are measured; `author_tf1` is trained and
 > reported above at k=10, k=20 and k=50; the evaluation-only dropout ablation is measured
-> (+0.000034, inside noise). Still pending: the five-seed table and the four retraining rows of
-> the Ablation Ledger. Paper targets elsewhere in this README are reference values, not results.
+> (+0.000034, inside noise); the five-seed table at k=10 is complete (sd 0.0065); three of the
+> four retraining ablations are measured. Still outstanding: multi-seed at k=20 and k=50, and the
+> z-score row, which is blocked on raw data rather than pending. Paper targets elsewhere in this README are reference values, not results.
 > [`RESULTS.md`](RESULTS.md) keeps the two apart.
 
 **The baseline every DeepLOB number must be read against** (FI-2010 Setup-2 test set,
