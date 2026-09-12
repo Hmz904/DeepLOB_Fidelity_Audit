@@ -301,7 +301,7 @@ separately because they change several choices at once.
 | test-time dropout, same checkpoint | on (`author_tf1`) | off via evaluation override | **+0.000034** | **measured, k=10** |
 | validation dropout / checkpoint selection | on (`author_tf1`) | off during validation | **+0.011153** | **measured, k=10** |
 | time padding | SAME | VALID | **−0.012921** | **measured, k=10** |
-| channel width | 32/64 | 16/32 | **−0.006020** | **measured, k=10** |
+| channel width | 32/64 | 16/32 | **−0.004241** | **measured, k=10, 400 epochs** |
 
 ### Measured: test-time dropout contributes nothing to the gap
 
@@ -331,33 +331,54 @@ This closes the only ablation row that required no retraining. Every remaining r
 
 Both retrain from scratch at k=10, seed 42, 200 epochs, against the same base run:
 
-| | base (`author_tf1`) | 16/32 channels | VALID padding |
-|---|---:|---:|---:|
-| parameters | 142,691 | **60,947** | 142,691 |
-| weighted F1 | 0.807689 | 0.801669 | 0.794768 |
-| **delta** | — | **−0.006020** | **−0.012921** |
-| accuracy | 0.819726 | 0.818895 | 0.807482 |
-| macro F1 | 0.7010 | 0.6827 | 0.6747 |
-| ECE | 0.011178 | 0.009178 | 0.011415 |
-| best epoch (of 200) | 69 | **180** | 140 |
-| training seconds | 12,730 | 4,819 | 11,091 |
+| | base (`author_tf1`) | 16/32, 200 ep | 16/32, 400 ep | VALID padding |
+|---|---:|---:|---:|---:|
+| parameters | 142,691 | **60,947** | **60,947** | 142,691 |
+| weighted F1 | 0.807689 | 0.801669 | **0.803448** | 0.794768 |
+| **delta** | — | −0.006020 | **−0.004241** | **−0.012921** |
+| accuracy | 0.819726 | 0.818895 | 0.818931 | 0.807482 |
+| macro F1 | 0.7010 | 0.6827 | 0.6887 | 0.6747 |
+| ECE | 0.011178 | 0.009178 | 0.012479 | 0.011415 |
+| best epoch | 69 (of 200) | **180 (of 200)** | **259 (of 400)** | 140 (of 200) |
+| best val loss | 0.669362 | 0.677465 | **0.669216** | 0.672673 |
+| training seconds | 12,730 | 4,819 | 9,966 | 11,091 |
 
-**Padding costs more than twice what channel width costs.** Halving both channel counts removes
-57 % of the parameters and 62 % of the training time for 0.6 points of weighted F1; switching the
-time padding to VALID changes no parameters at all and costs 1.3 points. Whichever ambiguity a
-reader of the paper resolves wrongly, this one is the expensive one.
+**Padding costs more than three times what channel width costs.** Halving both channel counts
+removes 57 % of the parameters and 62 % of the per-epoch training time for 0.42 points of weighted
+F1; switching the time padding to VALID changes no parameters at all and costs 1.3 points.
+Whichever ambiguity a reader of the paper resolves wrongly, this one is the expensive one.
 
-**Macro F1 falls faster than weighted F1 in both cases** — −0.0183 and −0.0263 against −0.0060 and
-−0.0129. The degradation is concentrated in the minority classes, and the weighted metric, which
-is what the paper reports, hides between half and two thirds of it. This is the concrete reason
-this repository reports both.
+The per-epoch saving is also not the saving. The narrow network runs at 24.9 s/epoch against the
+base's 63.7, but it needs 259 epochs to reach its best against the base's 69, so converging it
+costs 9,966 s against 12,730 — 22 % less wall time, not 62 %. A cheaper epoch bought a longer run.
 
-**The 16/32 run may not have converged.** Its best epoch is 180 of 200,
-against 69 for the base
-run: the smaller network is still improving when the budget ends. Its −0.006020 is therefore an
-upper bound on the cost of narrow channels under *this* epoch budget, not an estimate of the cost
-of narrow channels. Re-running it with a longer budget is the correct follow-up and is not yet
-done. The VALID run peaks at 140 and is less exposed to this.
+**Macro F1 falls faster than weighted F1 in both cases** — −0.0123 and −0.0263 against −0.0042 and
+−0.0129, ratios of 2.9x and 2.0x. The degradation is concentrated in the minority classes, and the
+weighted metric, which is what the paper reports, hides between half and two thirds of it. This is
+the concrete reason this repository reports both.
+
+A caution that applies to the first paragraph and not the third: at 0.42 points the channel row is
+0.65 seed standard deviations, so "padding costs more than three times channel width" is a
+comparison between a resolvable number and an unresolvable one. The macro/weighted asymmetry
+survives that objection because it is a within-row ratio — both metrics come from the same run, so
+the seed draw cancels.
+
+**The 16/32 run had not converged at 200 epochs, and rerunning it changes the conclusion — but not
+in the direction the caveat anticipated.** Its best epoch was 180 of 200 against 69 for the base,
+so the budget was plausibly binding. A 400-epoch rerun (`author_tf1_paper_channels_400ep.yaml`,
+same seed, resolved configs differing only in `run_name` and `max_epochs`) confirms it: best epoch
+moves to 259 and validation loss from 0.677465 to 0.669216.
+
+The measured cost of narrow channels therefore改为 −0.004241 rather than −0.006020. **The
+correction is 0.0018, which is 0.27 seed standard deviations, and the corrected value is itself
+only 0.65.** Against the k=10 seed sd of 0.0065 this row was never resolvable at one seed per
+condition, before or after the rerun. The honest reading is not "the number moved" but "this row
+cannot be read in a single-seed design" — running it longer replaced a wrong reason for doubting it
+with the right one.
+
+The VALID padding row peaks at 140 of 200, three times its patience clear of the ceiling, and is
+not exposed to this. At −0.012921, two seed standard deviations, it is the only ablation row that
+clearly exceeds single-seed noise.
 
 ### Measured: validation-time dropout, the only row that moves toward the paper
 

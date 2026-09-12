@@ -251,9 +251,10 @@ Measured, not estimated. One full `author_tf1` run at a single horizon:
 
 GPU utilisation sits near 50%: the model is small at 142,691 parameters but the 100-step LSTM
 is sequential, so the run is latency-bound on recurrence rather than throughput-bound on the
-convolutions. Remaining work (k=20/50, five seeds, three retraining ablations) is roughly
-32 GPU-hours at these settings, or about 11 with early stopping enabled — see the `patience`
-defect above. CPU is suitable for CI and smoke tests, not the headline experiment.
+convolutions. The headline experiment is complete: three horizons, five seeds at k=10, and four
+ablation rows. What remains is optional and machine-time-bound — five seeds at k=20 and k=50 would
+be eight more runs at about 12,400 s each, roughly 27.5 GPU-hours. The z-score row is blocked on
+raw data rather than pending. CPU is suitable for CI and smoke tests, not the headline experiment.
 
 ## Repository credibility checks
 
@@ -272,9 +273,10 @@ The normal CI suite is network-free. A separate monthly/manual **Real FI-2010 da
 See [`RESULTS.md`](RESULTS.md). The intended headline artifacts are:
 
 1. paper vs independent weighted-F1 gap by horizon (**k=10, k=20 and k=50 all done**);
-2. five-seed mean ± standard deviation (pending);
+2. five-seed mean ± standard deviation at k=10 (**done** — sd 0.0065, and the gap is reported as
+   −0.0231 ± 0.0065; k=20 and k=50 remain single-seed);
 3. class distribution + majority baseline (done);
-4. an **Ablation Ledger** measuring the F1 cost of normalization, padding and channel-count ambiguities, while splitting inference dropout into (a) same-checkpoint test-time dropout noise and (b) validation/checkpoint-selection drift. (a) is measured at k=10 — **+0.000034 weighted F1, inside Monte-Carlo noise, so test-time dropout is eliminated as an explanation of the gap**; (b) is pending and requires retraining.
+4. an **Ablation Ledger** measuring the F1 cost of normalization, padding and channel-count ambiguities, while splitting inference dropout into (a) same-checkpoint test-time dropout noise and (b) validation/checkpoint-selection drift. (a) is measured at k=10 — **+0.000034 weighted F1, inside Monte-Carlo noise, so test-time dropout is eliminated as an explanation of the gap**; (b) is measured — **+0.011153 weighted F1, closing 42% of the k=10 gap**, the only ablation row that moves toward the paper.
 
 ```bash
 pip install -e ".[report]"

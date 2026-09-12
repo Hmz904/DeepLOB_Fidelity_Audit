@@ -1,0 +1,16 @@
+protocol: author_tf1
+run_name: fi2010-author-tf1-paper-channels-400ep
+
+data:
+  dataset: fi2010
+  horizons: [10]
+
+models:
+  names: [deeplob]
+  conv_channels: 16
+  inception_channels: 32
+
+training:
+  seed: 42
+  device: auto
+  max_epochs: 400
