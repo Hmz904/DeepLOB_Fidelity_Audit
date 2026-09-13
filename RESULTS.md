@@ -102,8 +102,8 @@ Single training seed, full 200-epoch `author_tf1` protocol, no shortcuts. Run fi
 
 | Horizon | Paper weighted F1 | Ours: author_tf1 | Gap | Majority floor | Lift over floor | Seeds | Status |
 |---:|---:|---:|---:|---:|---:|---:|---|
-| 10 | 0.8340 | **0.8077** | **−0.0263** | 0.5855 | **+0.2222** | 1 | **verified** |
-| 20 | 0.7282 | **0.7177** | **−0.0105** | 0.4755 | **+0.2422** | 1 | **verified** |
+| 10 | 0.8340 | **0.8109** | **−0.0231 ± 0.0065** | 0.5855 | **+0.2254** | 5 | **verified** |
+| 20 | 0.7282 | **0.7158** | **−0.0124 ± 0.0059** | 0.4755 | **+0.2403** | 3 | **verified** |
 | 50 | 0.8035 | **0.7505** | **−0.0530** | 0.3039 | **+0.4466** | 1 | **verified** |
 
 Full k=10 metrics:
@@ -159,25 +159,27 @@ the evaluation block is not.
 
 Three observations, each of which required more than one horizon to see:
 
-1. **The gap is not monotonic in `k`.** At −0.0105, k=20 is the closest of the three to the
-   published figure, and k=50 is the furthest at −0.0530. Any account of the shortfall that
-   predicts it grows with the prediction horizon is ruled out by this ordering. It also means
-   the k=10 figure of −0.0263 is not a representative value for the replication as a whole:
-   the horizon-to-horizon spread (0.0425) is larger than the k=10 gap itself.
+1. **The gap is not monotonic in `k`, and this now survives seed noise at one of the two comparisons.** k=20 is the closest to the published figure at −0.0124 ± 0.0059 (n=3) and k=50
+   the furthest at −0.0530 (n=1), with k=10 between them at −0.0231 ± 0.0065 (n=5). The k=10 to
+   k=20 difference of 0.0107 is 2.4 standard errors of the difference, so the ordering of those two
+   is not a seed artifact. The k=50 end still rests on a single run and carries no error estimate,
+   so "k=50 is the furthest" remains an unreplicated claim. Any account of the shortfall that
+   predicts it grows with the prediction horizon is ruled out by the part that is replicated.
 
-2. **Calibration is worst where accuracy is closest.** k=20 has an expected calibration error
-   3.5 times the other two (0.0402 against 0.0112 and 0.0116) while simultaneously showing the
-   smallest weighted-F1 gap. Accuracy and calibration are not moving together here, and nothing
-   in the protocol distinguishes k=20 from its neighbours, so this is recorded as an unexplained
-   observation rather than a finding.
+2. **Calibration is worst where accuracy is closest, and it reproduces across seeds.** k=20's
+   expected calibration error is 0.0404 ± 0.0087 (n=3) against k=10's 0.0162 ± 0.0030 (n=5) and
+   k=50's 0.0116 (n=1) — a 2.5x difference at 4.7 standard errors, while k=20 simultaneously shows
+   the smallest weighted-F1 gap. This was recorded as a single-seed curiosity; three seeds make it
+   a property of the horizon rather than of a draw. Accuracy and calibration are not moving
+   together here, and nothing in the protocol distinguishes k=20 from its neighbours, so it remains
+   an unexplained observation — but no longer a fragile one.
 
 3. **Test-time dropout noise is uniformly negligible.** The MC standard deviation stays near
    0.0002 at every horizon, two orders of magnitude below every gap in the table. The
    single-draw reporting licence established at k=10 extends to k=20 and k=50.
 
-All three remain single-seed results. Under the reporting contract below, none of these gaps
-may be quoted as *the* replication gap until the multi-seed table exists — and with the spread
-across horizons at 0.0425, the seed spread is the obvious next thing to measure.
+k=10 and k=20 now have seed distributions; k=50 does not. Under the reporting contract below, the
+k=50 gap may not be quoted as *the* replication gap at that horizon until it does.
 ### Compute manifest
 
 | | |

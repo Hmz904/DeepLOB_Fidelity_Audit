@@ -2,10 +2,15 @@
 
 ## 1. Finish the FI-2010 fidelity audit
 
-- run `author_tf1` at k=10/20/50 on five training seeds;
-- quantify MC-dropout test noise separately from training-seed noise;
-- run the Ablation Ledger (normalization, inference dropout, padding, channel widths);
-- publish paper-vs-reproduction gap figure and hardware/time manifest.
+- [x] run `author_tf1` at k=10/20/50 — five seeds at k=10, three at k=20, one at k=50;
+- [x] quantify MC-dropout test noise separately from training-seed noise — MC sd is near 0.0002 at
+      every horizon against training-seed sd of 0.006, two orders of magnitude apart;
+- [x] run the Ablation Ledger — padding, channel width and both dropout splits are measured; the
+      z-score row is blocked on raw data rather than pending;
+- [x] publish paper-vs-reproduction gap figure and hardware/time manifest.
+
+Remaining and optional: four more seeds at k=50, about 13.8 GPU-hours, which is the only thing
+keeping that horizon on a single run.
 
 ## 2. Honest economic evaluation on raw LOB data
 
